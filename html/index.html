@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Nest.js Authentication</title>
+        <meta charset="utf8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    </head>
+    <style>
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #fefefe;
+            margin: 0;
+        }
+
+        #main {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 320px;
+            margin: 0;
+            padding: 20px 20px;
+            background-color: #fff;
+            border: 2px solid #eee;
+            border-right: 0;
+            border-top-left-radius: 4px;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 12px 24px #0002;
+        }
+
+        #form {
+            margin: 0;
+            padding: 0;
+        }
+
+        #username-label, #password-label {
+            font-size: 14px;
+            color: #aaa;
+            margin: 0 0 12px 2px;
+        }
+
+        #username, #password {
+            width: 100%;
+            font-size: 21px;
+            color: #333;
+            margin: 0 0 20px 0;
+            padding: 6px 8px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            outline: none;
+            transition: border-color .15s ease-out;
+        }
+
+        #username:hover,
+        #username:focus,
+        #password:hover,
+        #password:focus {
+            border-color: #007aff;
+        }
+
+        #submit, #get-profile {
+            appearance: none;
+            width: 100%;
+            font-size: 18px;
+            color: #fff;
+            text-align: center;
+            border: 0;
+            margin: 8px 0 0 0;
+            padding: 8px;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        #submit {
+            background-color: #007aff;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 4px rgba(0,123,255,.625);
+            transition: box-shadow .2s ease-out;
+        }
+
+        #submit:hover,
+        #submit:focus {
+            box-shadow: 0 2px 4px rgba(0,123,255, .625),
+                        0 4px 8px rgba(0,123,255, .425);
+        }
+
+        #get-profile {
+            color: #777;
+            margin: 20px auto 0 auto;
+            border: 2px solid transparent;
+            background-color: #eee;
+            transition: background-color .15s;
+        }
+
+        #get-profile:hover,
+        #get-profile:focus {
+            background-color: #ddd;
+        }
+
+        #console {
+            display: flex;
+            width: 320px;
+            height: 310px;
+            flex-direction: column;
+            font-family: Consolas;
+            padding: 20px;
+            color: #fff;
+            background-color: #333;
+            border: 2px solid #171717;
+            border-left: unset;
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+            overflow-x: hidden;
+            overflow-y: scroll;
+            word-break: break-all;
+            box-shadow: 0 12px 24px #0002,
+                        inset 6px 0 2px #0003;
+        }
+
+        .log-message {
+            color: #fff;
+            font-size: 16px;
+            margin: 0 0 8px 0;
+        }
+
+        .log-message::selection {
+            background-color: rgba(255,255,255,.125);
+        }
+
+        #title {
+            position: absolute;
+            bottom: 10vh;
+            color: #aaa;
+            font-weight: 100;
+        }
+
+        #title::selection {
+            background-color: rgba(0,0,0,.05);
+        }
+
+        @media screen and (max-width: 568px){
+            #title {
+                display: none;
+            }
+        }
+
+        @media screen and (max-height: 568px){
+            #title {
+                display: none;
+            }
+        }
+
+        @media screen and (orientation: portrait){
+            #main {
+                flex-direction: column;
+            }
+
+            #wrapper {
+                border-bottom: 0;
+                border-right: 2px solid #eee;
+                border-bottom-left-radius: 0;
+                border-top-right-radius: 4px;
+            }
+
+            #console {
+                border-top: 0;
+                border-left: 2px solid #171717;
+                border-top-right-radius: 0;
+                border-bottom-left-radius: 4px;
+            }
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const id = query => document.getElementById(query),
+                log = (log, color = "#f5f5f5") => {
+                    let logMessage = document.createElement("p")
+                    logMessage.textContent = log
+                    logMessage.classList.add("log-message")
+                    logMessage.style.color = color
+
+                    id("console").prepend(logMessage)
+                }
+
+            let token
+
+            id('form').addEventListener('submit', event => {
+                event.preventDefault()
+
+                fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: id('username').value,
+                        password: id('password').value,
+                    }),
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.statusCode === 401)
+                            throw `Error ${data.statusCode}: ${data.error}`
+
+                        log(`Access Token: ${data.access_token}`)
+                        log(`Logged in`)
+
+                        return token = data.access_token
+                    })
+                    .catch(err => {
+                        log(err, "#ff6b6b")
+                    })
+            })
+
+            id('get-profile').addEventListener('click', () => {
+                fetch('/profile', {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.statusCode === 401)
+                            throw `Error ${data.statusCode}: ${data.error}`
+
+                        log(`Bio: ${data.bio}`)
+                        log(`Username: ${data.username}`)
+                    })
+                    .catch(err => {
+                        log(err, "#ff6b6b")
+                    })
+            })
+        })
+    </script>
+    <body>
+        <main id="main">
+            <section id="wrapper">
+                <form id="form" method="POST" action="/endpoint">
+                    <label id="username-label" for="username">Username</label>
+                    <input
+                        id="username"
+                        type="text"
+                        name="username"
+                        placeholder="Username"
+                    />
+
+                    <label id="password-label" for="password">Password</label id="user-label" >
+                    <input
+                        id="password"
+                        type="password"
+                        name="password"
+                        placeholder="Password"
+                    />
+                    <button id="submit">Login</button>
+                </form>
+                <button id="get-profile">Get Profile</button>
+            </section>
+            <div id="console"></div>
+            <h1 id="title">Nest.js Authentication</h1>
+        </main>
+    </body>
+</html>

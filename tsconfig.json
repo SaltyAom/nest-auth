@@ -12,11 +12,11 @@
         "incremental": true,
         "paths": {
             "src": ["src"],
+            "@services": ["src/services/*"],
             "@pipes/*": ["src/pipes/*"],
             "@guards/*": ["src/guards/*"],
             "@interceptors/*": ["src/interceptors/*"],
             "@decorators/*": ["src/decorators/*"],
-
         }
     },
     "exclude": ["node_modules", "dist"]
